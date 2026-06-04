@@ -429,9 +429,9 @@ function od(id){
         <div class="cprev" id="dcpv" style="margin-top:20px;">${fmt(cm)}</div>
       </div>
       <div class="fg"><label>Notas</label><textarea id="dno">${c.notes||""}</textarea></div>
-      <button class="btnp" id="sd">Guardar cambios</button>
-      <button class="delbtn" id="del">🗑 Eliminar cliente</button>
     </div>
+    <button class="btnp" id="sd" style="display:none;margin-top:14px;">Guardar cambios</button>
+    <button class="delbtn" id="del">🗑 Eliminar cliente</button>
   `;
 
   document.getElementById("dm").classList.add("open");lockScroll();
@@ -442,9 +442,15 @@ function od(id){
     const ef=document.getElementById("ef");
     const vf=document.getElementById("vf");
     const btn=document.getElementById("edbtn");
+    const sd=document.getElementById("sd");
     const editing=ef.classList.contains("open");
-    if(editing){ef.classList.remove("open");vf.classList.remove("hidden");btn.classList.remove("active");}
-    else{ef.classList.add("open");vf.classList.add("hidden");btn.classList.add("active");}
+    if(editing){
+      ef.classList.remove("open");vf.classList.remove("hidden");
+      btn.classList.remove("active");sd.style.display="none";
+    } else {
+      ef.classList.add("open");vf.classList.add("hidden");
+      btn.classList.add("active");sd.style.display="block";
+    }
   });
 
   // Quick stage change from view mode

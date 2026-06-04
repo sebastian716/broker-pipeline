@@ -185,6 +185,12 @@ body { font-family: 'Barlow', sans-serif; background: #E4EAF4; min-height: 100vh
 
 .ssub { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #6B7FA8; margin: 16px 0 8px; }
 .delbtn { width: 100%; padding: 12px; margin-top: 10px; background: white; border: 1.5px solid #FECDD3; border-radius: var(--rs); color: var(--cd-red); font-family: 'Barlow'; font-size: 13px; cursor: pointer; font-weight: 600; }
+.confirm-box { display:none; background:#FEF2F2; border: 1.5px solid #FECDD3; border-radius: var(--rs); padding: 14px; margin-top: 10px; text-align: center; }
+.confirm-box.open { display: block; }
+.confirm-box p { font-size: 13px; color: #7f1d1d; margin-bottom: 12px; font-weight: 500; }
+.confirm-btns { display: flex; gap: 8px; }
+.confirm-yes { flex:1; padding: 10px; background: var(--cd-red); color: white; border: none; border-radius: var(--rs); font-family: 'Barlow'; font-size: 13px; font-weight: 700; cursor: pointer; }
+.confirm-no { flex:1; padding: 10px; background: white; border: 1.5px solid #D1DCF0; border-radius: var(--rs); font-family: 'Barlow'; font-size: 13px; cursor: pointer; color: var(--cd-dark); }
 .cd-select { position: relative; }
 .cd-select-trigger {
   display: flex; align-items: center; gap: 10px;
@@ -432,6 +438,13 @@ function od(id){
     </div>
     <button class="btnp" id="sd" style="display:none;margin-top:14px;">Guardar cambios</button>
     <button class="delbtn" id="del">🗑 Eliminar cliente</button>
+    <div class="confirm-box" id="confirm-box">
+      <p>¿Seguro que quieres eliminar este cliente?</p>
+      <div class="confirm-btns">
+        <button class="confirm-no" id="confirm-no">Cancelar</button>
+        <button class="confirm-yes" id="confirm-yes">Sí, eliminar</button>
+      </div>
+    </div>
   `;
 
   document.getElementById("dm").classList.add("open");lockScroll();
@@ -470,7 +483,19 @@ function od(id){
   });
 
   document.getElementById("del").addEventListener("click",()=>{
-    if(confirm("¿Eliminar este cliente?")){clients=clients.filter(x=>x.id!==selId);sc(clients);document.getElementById("dm").classList.remove("open");unlockScroll();ra();}
+    document.getElementById("confirm-box").classList.add("open");
+    document.getElementById("del").style.display="none";
+  });
+  document.getElementById("confirm-no").addEventListener("click",()=>{
+    document.getElementById("confirm-box").classList.remove("open");
+    document.getElementById("del").style.display="block";
+  });
+  document.getElementById("confirm-yes").addEventListener("click",()=>{
+    clients=clients.filter(x=>x.id!==selId);
+    sc(clients);
+    document.getElementById("dm").classList.remove("open");
+    unlockScroll();
+    ra();
   });
 }
 

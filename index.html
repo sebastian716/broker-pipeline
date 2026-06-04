@@ -466,9 +466,6 @@ function od(id){
     }
   });
 
-  // Quick stage change from view mode
-  document.getElementById("qstage").addEventListener("change",()=>qsave());
-
   document.getElementById("sd").addEventListener("click",()=>{
     const c2=clients.find(x=>x.id===selId);
     if(c2){

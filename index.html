@@ -111,22 +111,30 @@ body { font-family: 'Barlow', sans-serif; background: #E4EAF4; min-height: 100vh
 .empty { text-align: center; padding: 32px 16px; color: #9AAAC0; font-size: 14px; }
 
 /* OVERLAYS */
-.overlay { display: none; position: fixed; inset: 0; background: rgba(0,20,60,.55); z-index: 100; }
-.overlay.open { display: flex; align-items: flex-end; justify-content: center; }
-.overlay.open::before { content: ""; position: absolute; inset: 0; z-index: 0; }
-.overlay .modal { z-index: 1; }
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,20,60,.55);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+}
+.overlay.open {
+  display: flex;
+}
 .modal {
-  background: white;
-  border-radius: 20px 20px 0 0;
   width: 100%;
   max-width: 420px;
   max-height: 80vh;
-  overflow-y: scroll;
+  background: white;
+  border-radius: 20px;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
-  padding: 20px 20px 40px;
-  position: relative;
-  flex-shrink: 0;
+  overscroll-behavior: contain;
+  padding: 20px 20px 28px;
+  box-sizing: border-box;
 }
 .handle { width: 40px; height: 4px; background: #D1D9E6; border-radius: 2px; margin: 0 auto 18px; }
 .modal h2 { font-size: 18px; font-weight: 700; color: var(--cd-dark); margin-bottom: 16px; }
@@ -177,6 +185,34 @@ body { font-family: 'Barlow', sans-serif; background: #E4EAF4; min-height: 100vh
 
 .ssub { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #6B7FA8; margin: 16px 0 8px; }
 .delbtn { width: 100%; padding: 12px; margin-top: 10px; background: white; border: 1.5px solid #FECDD3; border-radius: var(--rs); color: var(--cd-red); font-family: 'Barlow'; font-size: 13px; cursor: pointer; font-weight: 600; }
+.cd-select { position: relative; }
+.cd-select-trigger {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px; border: 1.5px solid #D1DCF0; border-radius: var(--rs);
+  background: white; cursor: pointer; font-family: 'Barlow'; font-size: 14px;
+  color: var(--cd-dark); user-select: none;
+}
+.cd-select-trigger.open { border-color: var(--cd-blue); }
+.cd-select-trigger .sdot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cd-select-trigger .cd-chevron { margin-left: auto; color: #6B7FA8; transition: transform 0.2s; }
+.cd-select-trigger.open .cd-chevron { transform: rotate(180deg); }
+.cd-select-dropdown {
+  display: none; position: absolute; left: 0; right: 0; bottom: calc(100% + 4px);
+  background: white; border: 1.5px solid #D1DCF0; border-radius: var(--rs);
+  z-index: 200; overflow: hidden;
+  box-shadow: 0 -4px 16px rgba(0,47,135,0.12);
+}
+.cd-select-dropdown.open { display: block; }
+.cd-option {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px; cursor: pointer; font-family: 'Barlow'; font-size: 14px;
+  color: var(--cd-dark); border-bottom: 1px solid #F1F5FB;
+}
+.cd-option:last-child { border-bottom: none; }
+.cd-option:hover { background: #F5F8FF; }
+.cd-option.selected { background: #EBF4FF; font-weight: 600; }
+.cd-option .sdot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cd-option .schk { margin-left: auto; color: var(--cd-dark); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -368,9 +404,19 @@ function od(id){
       <div class="dr"><span class="dl">🎯 Comisión (${c.commPct||1}%)</span><span class="dv ${c.stage===5?"gn":""}">${fmt(cm)}</span></div>
       ${c.notes?`<div style="margin-top:10px;padding:10px 12px;background:#F8FAFD;border-radius:var(--rs);font-size:13px;color:#4B5C7A;">${c.notes}</div>`:""}
       <div class="ssub" style="margin-top:14px;">Etapa</div>
-      <select class="stage-select" id="qstage" onchange="qsave()">
-        ${stageOpts}
-      </select>
+      <div class="cd-select" id="stage-select-wrap">
+        <div class="cd-select-trigger" id="stage-trigger" onclick="toggleStageDD()">
+          <span class="sdot" id="stage-dot" style="background:${ST.find(s=>s.id===c.stage).color}"></span>
+          <span id="stage-label">${ST.find(s=>s.id===c.stage).label}</span>
+          <svg class="cd-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <div class="cd-select-dropdown" id="stage-dd">
+          ${ST.map(s=>`<div class="cd-option${c.stage===s.id?" selected":""}" data-stage="${s.id}" onclick="qstageClick(${s.id})">
+            <span class="sdot" style="background:${s.color}"></span>${s.label}
+            ${c.stage===s.id?'<span class="schk">✓</span>':""}
+          </div>`).join("")}
+        </div>
+      </div>
     </div>
 
     <div class="edit-fields" id="ef">
@@ -422,15 +468,41 @@ function od(id){
   });
 }
 
-function qsave(){
+function toggleStageDD(){
+  const trigger=document.getElementById("stage-trigger");
+  const dd=document.getElementById("stage-dd");
+  if(!trigger||!dd)return;
+  trigger.classList.toggle("open");
+  dd.classList.toggle("open");
+}
+function qstageClick(stageId){
   const c=clients.find(x=>x.id===selId);
-  if(c){c.stage=parseInt(document.getElementById("qstage").value);sc(clients);ra();
-  // Refresh the header pill
-  const st=ST.find(s=>s.id===c.stage);
-  document.querySelector(".dh .dn+span")||null;
+  if(!c)return;
+  c.stage=stageId;
+  sc(clients);
+  ra();
+  const st=ST.find(s=>s.id===stageId);
+  // Update pill
   const pills=document.querySelectorAll(".dh .pill");
   if(pills.length){pills[0].className="pill "+st.cls;pills[0].textContent=st.label;}
-  }
+  // Update trigger
+  const dot=document.getElementById("stage-dot");
+  const lbl=document.getElementById("stage-label");
+  if(dot)dot.style.background=st.color;
+  if(lbl)lbl.textContent=st.label;
+  // Update options
+  document.querySelectorAll(".cd-option").forEach(o=>{
+    const active=parseInt(o.dataset.stage)===stageId;
+    o.className="cd-option"+(active?" selected":"");
+    const chk=o.querySelector(".schk");
+    if(active&&!chk){const s=document.createElement("span");s.className="schk";s.textContent="✓";o.appendChild(s);}
+    else if(!active&&chk){chk.remove();}
+  });
+  // Close dropdown
+  const trigger=document.getElementById("stage-trigger");
+  const dd=document.getElementById("stage-dd");
+  if(trigger)trigger.classList.remove("open");
+  if(dd)dd.classList.remove("open");
 }
 
 function udc(){
